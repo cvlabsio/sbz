@@ -1,0 +1,61 @@
+From 58d2471ab2ce23cd8d9e6a36da0af911fe6632e6 Mon Sep 17 00:00:00 2001
+From: Clayton Gilmer <claytongilmer24@outlook.com>
+Date: Thu, 16 Mar 2023 01:30:25 -0400
+Subject: [PATCH] add pc-relative addressing SPARC call fixups, fix
+ R_SPARC_RELATIVE relocations for modules
+
+---
+ Ghidra/Processors/Sparc/data/languages/SparcV9_32.cspec   | 8 ++++++++
+ Ghidra/Processors/Sparc/data/patterns/SPARC_patterns.xml  | 5 +++++
+ .../format/elf/relocation/SPARC_ElfRelocationHandler.java | 4 +++-
+ 3 files changed, 16 insertions(+), 1 deletion(-)
+
+diff --git a/Ghidra/Processors/Sparc/data/languages/SparcV9_32.cspec b/Ghidra/Processors/Sparc/data/languages/SparcV9_32.cspec
+index 28f5f3006..f5ad61d1f 100644
+--- a/Ghidra/Processors/Sparc/data/languages/SparcV9_32.cspec
++++ b/Ghidra/Processors/Sparc/data/languages/SparcV9_32.cspec
+@@ -100,4 +100,12 @@
+       </localrange>
+     </prototype>
+   </default_proto>
++  <callfixup name="__sparc_get_pc_thunk">
++    <target name="__sparc_get_pc_thunk_1"/>
++    <pcode>
++      <body><![CDATA[
++      l7 = inst_start + l7;
++      ]]></body>
++    </pcode>
++  </callfixup>
+ </compiler_spec>
+diff --git a/Ghidra/Processors/Sparc/data/patterns/SPARC_patterns.xml b/Ghidra/Processors/Sparc/data/patterns/SPARC_patterns.xml
+index 3d1976d23..8421fb9ce 100644
+--- a/Ghidra/Processors/Sparc/data/patterns/SPARC_patterns.xml
++++ b/Ghidra/Processors/Sparc/data/patterns/SPARC_patterns.xml
+@@ -1,4 +1,9 @@
+ <patternlist>
++  <pattern>
++    <data>0x81 0xc3 0xe0 0x08 0xae 0x03 0xc0 0x17</data>
++    <funcstart label="__sparc_get_pc_thunk_1" validcode="function"/>
++  </pattern>
++
+   <patternpairs totalbits="32" postbits="16">
+     <prepatterns>
+       <data>0x81f00000 </data> <!-- done -->
+diff --git a/Ghidra/Processors/Sparc/src/main/java/ghidra/app/util/bin/format/elf/relocation/SPARC_ElfRelocationHandler.java b/Ghidra/Processors/Sparc/src/main/java/ghidra/app/util/bin/format/elf/relocation/SPARC_ElfRelocationHandler.java
+index fd888c815..5d3a3cccf 100644
+--- a/Ghidra/Processors/Sparc/src/main/java/ghidra/app/util/bin/format/elf/relocation/SPARC_ElfRelocationHandler.java
++++ b/Ghidra/Processors/Sparc/src/main/java/ghidra/app/util/bin/format/elf/relocation/SPARC_ElfRelocationHandler.java
+@@ -97,7 +97,9 @@ public class SPARC_ElfRelocationHandler extends ElfRelocationHandler {
+ 				memory.setInt(relocationAddress, newValue);
+ 				break;
+ 			case SPARC_ElfRelocationConstants.R_SPARC_RELATIVE:
+-				newValue = (int) elf.getImageBase() + (int) addend;
++			// idek
++			// for some reason the modules need the relocation entry offset by an extra 0x10000
++				newValue = (int) elf.getImageBase() + (int) addend + 0x10000;
+ 				memory.setInt(relocationAddress, newValue);
+ 				break;
+ 			case SPARC_ElfRelocationConstants.R_SPARC_UA32:
+-- 
+2.39.2.windows.1
+
