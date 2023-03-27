@@ -1,5 +1,3 @@
-# Companion repository to "Digging Through Fossils: A Look at 'SBZ'" (currently non-public writeup)
-
 - Source code to the module relation graph can be found in [/graphs](/graphs).
 - Necessary Ghidra patches and instructions to apply them can be found in [/patches](/patches).
 - Encrypted archive (see writeup for password) containing core, modules, and data files can be found in [/samples](/samples).
